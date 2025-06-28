@@ -21,20 +21,41 @@ interface RegisterForm {
   phoneValue: string;
   plan: string;
   terms: boolean;
+
+  password: string;
+  confirmPassword: string;
 }
 
 const RegisterPage: React.FC = () => {
   const [phoneImages, setPhoneImages] = useState<File[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
-  
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<RegisterForm>();
-  
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+  } = useForm<RegisterForm>();
+
   const selectedPlan = watch('plan');
+  const password = watch('password');
 
   const plans = {
-    basic: { name: 'Basic Plan', price: '$9.99/month', features: ['Screen repair', 'Basic protection', '24/7 support'] },
-    premium: { name: 'Premium Plan', price: '$19.99/month', features: ['Complete protection', 'Theft coverage', 'Water damage', 'Unlimited claims'] },
-    family: { name: 'Family Plan', price: '$34.99/month', features: ['Up to 5 devices', 'All Premium features', 'Family dashboard'] }
+    basic: {
+      name: 'Basic Plan',
+      price: '$9.99/month',
+      features: ['Screen repair', 'Basic protection', '24/7 support'],
+    },
+    premium: {
+      name: 'Premium Plan',
+      price: '$19.99/month',
+      features: ['Complete protection', 'Theft coverage', 'Water damage', 'Unlimited claims'],
+    },
+    family: {
+      name: 'Family Plan',
+      price: '$34.99/month',
+      features: ['Up to 5 devices', 'All Premium features', 'Family dashboard'],
+    },
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,13 +72,37 @@ const RegisterPage: React.FC = () => {
   };
 
   const onSubmit = async (data: RegisterForm) => {
+    if (data.password !== data.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (key !== 'confirmPassword') {
+        formData.append(key, String(value));
+      }
+    });
+
+    phoneImages.forEach((image) => {
+      formData.append('images', image);
+    });
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.message || 'Something went wrong');
+
       setShowSuccess(true);
       toast.success('Registration successful!');
-    } catch (error) {
-      toast.error('Registration failed');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed');
     }
   };
 
@@ -75,7 +120,7 @@ const RegisterPage: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to CoverCell!</h2>
             <p className="text-gray-600 mb-6">
-              Your registration is complete and your coverage is now active. 
+              Your registration is complete and your coverage is now active.
               You'll receive a confirmation email shortly.
             </p>
             <Link
@@ -121,7 +166,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.firstName.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Last Name *
@@ -134,15 +179,15 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.lastName.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address *
                     </label>
                     <input
-                      {...register('email', { 
+                      {...register('email', {
                         required: 'Email is required',
-                        pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' }
+                        pattern: { value: /\S+@\S+\.\S+/, message: 'Invalid email' },
                       })}
                       type="email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -151,7 +196,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.email.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number *
@@ -165,7 +210,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.phone.message}</p>
                     )}
                   </div>
-                  
+
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Address *
@@ -178,7 +223,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.address.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       City *
@@ -191,7 +236,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.city.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       State *
@@ -211,7 +256,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.state.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       ZIP Code *
@@ -250,7 +295,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.phoneBrand.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Model *
@@ -264,7 +309,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.phoneModel.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Purchase Date *
@@ -278,7 +323,7 @@ const RegisterPage: React.FC = () => {
                       <p className="text-red-600 text-sm mt-1">{errors.purchaseDate.message}</p>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Device Value *
@@ -322,7 +367,7 @@ const RegisterPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   {phoneImages.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                       {phoneImages.map((file, index) => (
@@ -346,6 +391,44 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Password Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password *
+                  </label>
+                  <input
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: { value: 6, message: 'Minimum 6 characters' },
+                    })}
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {errors.password && (
+                    <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password *
+                  </label>
+                  <input
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: (value) =>
+                        value === password || 'Passwords do not match',
+                    })}
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-red-600 text-sm mt-1">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+              </div>
+
               {/* Plan Selection */}
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Choose Your Plan</h2>
@@ -358,9 +441,11 @@ const RegisterPage: React.FC = () => {
                         value={key}
                         className="sr-only"
                       />
-                      <div className={`border-2 rounded-lg p-4 transition-colors ${
-                        selectedPlan === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}>
+                      <div
+                        className={`border-2 rounded-lg p-4 transition-colors ${
+                          selectedPlan === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
                         <h3 className="font-semibold text-gray-900">{plan.name}</h3>
                         <p className="text-lg font-bold text-blue-600 mb-2">{plan.price}</p>
                         <ul className="text-sm text-gray-600 space-y-1">
@@ -420,3 +505,5 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
+
+

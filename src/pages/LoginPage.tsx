@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { Shield, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -13,22 +12,32 @@ interface LoginForm {
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
-  
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>();
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const success = await login(data.email, data.password);
-      if (success) {
-        toast.success('Login successful!');
-        navigate('/dashboard');
-      } else {
-        toast.error('Invalid credentials');
+      const res = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.msg || 'Login failed');
       }
-    } catch (error) {
-      toast.error('Login failed');
+
+      toast.success('Login successful!');
+      localStorage.setItem('token', result.token);
+      navigate('/'); // ✅ Redirect to Home page after login
+    } catch (error: any) {
+      toast.error(error.message || 'Something went wrong');
     }
   };
 
@@ -47,9 +56,7 @@ const LoginPage: React.FC = () => {
             </div>
             <span className="text-2xl font-bold text-white">CoverCell</span>
           </Link>
-          <h2 className="text-center text-3xl font-bold text-white">
-            Sign in to your account
-          </h2>
+          <h2 className="text-center text-3xl font-bold text-white">Sign in to your account</h2>
           <p className="mt-2 text-center text-blue-100">
             Or{' '}
             <Link to="/register" className="font-medium text-yellow-400 hover:text-yellow-300">
@@ -57,7 +64,7 @@ const LoginPage: React.FC = () => {
             </Link>
           </p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-xl p-8">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
@@ -65,7 +72,7 @@ const LoginPage: React.FC = () => {
                 Email address
               </label>
               <input
-                {...register('email', { 
+                {...register('email', {
                   required: 'Email is required',
                   pattern: {
                     value: /\S+@\S+\.\S+/,
@@ -119,18 +126,6 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
-          
-          <div className="mt-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Accounts:</h3>
-              <div className="text-xs text-blue-700 space-y-1">
-                <div><strong>Admin:</strong> admin@covercell.com / password</div>
-                <div><strong>Shop Owner:</strong> shop@covercell.com / password</div>
-                <div><strong>Employee:</strong> employee@covercell.com / password</div>
-                <div><strong>Customer:</strong> customer@example.com / password</div>
-              </div>
-            </div>
-          </div>
         </div>
       </motion.div>
     </div>
